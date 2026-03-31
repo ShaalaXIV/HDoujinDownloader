@@ -24,6 +24,42 @@ To get started, download the [latest release](https://doujindownloader.com/hdouj
 
 If you need any help, don't hesitate to [reach out](https://doujindownloader.com/contact/)!
 
+
+## Full-site tag indexer (searchable DB + thumbnails)
+
+If you want an "ultimate" searchable tag database, use:
+
+```bash
+python3 scripts/imhentai_tag_indexer.py crawl "https://imhentai.xxx/new/"   --db downloads/imhentai_index.sqlite3   --thumbnail-dir downloads/index_thumbnails   --max-listing-pages 5000   --delay 0.25
+```
+
+Then search with multiple tags (AND logic):
+
+```bash
+python3 scripts/imhentai_tag_indexer.py search agata dog --db downloads/imhentai_index.sqlite3
+```
+
+Each result includes the gallery URL and local thumbnail path (if downloaded).
+To export just the matching links for another downloader/scraper:
+
+```bash
+python3 scripts/imhentai_tag_indexer.py export-links agata dog \
+  --db downloads/imhentai_index.sqlite3 \
+  --out downloads/matching_links.txt
+```
+
+To browse results in a local clickable UI (open links directly + copy all links):
+
+```bash
+python3 scripts/imhentai_tag_indexer.py serve --db downloads/imhentai_index.sqlite3 --port 8765
+```
+
+You can also export the whole index:
+
+```bash
+python3 scripts/imhentai_tag_indexer.py export-json --db downloads/imhentai_index.sqlite3 --out downloads/imhentai_index.json
+```
+
 ## Standalone IMHentai downloader script
 
 If you want to directly use the IMHentai scraping logic without launching the HDoujin Downloader app, use:
