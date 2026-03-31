@@ -122,21 +122,6 @@ def extension_from_key(key: str) -> str:
     }.get(key, ".jpg")
 
 
-def download_binary(url: str, referer: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Referer": referer})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read()
-
-
-def candidate_extensions(primary_ext: str) -> list[str]:
-    ordered = [primary_ext, ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"]
-    deduped: list[str] = []
-    for ext in ordered:
-        if ext not in deduped:
-            deduped.append(ext)
-    return deduped
-
-
 def image_server_from_gallery_id(gallery_id: int) -> str:
     if 0 < gallery_id <= 274825:
         return "m1"
@@ -302,42 +287,26 @@ def download_gallery(url: str, args: argparse.Namespace) -> tuple[bool, str]:
         return True, f"Saved metadata: {gallery_dir / 'metadata.json'}"
 
     total = len(images)
-    failure_count = 0
     for idx, key in enumerate(images.keys(), start=1):
         kind = str(images[key][0]) if isinstance(images[key], list) and images[key] else "j"
-        selected_ext = extension_from_key(kind)
-        downloaded = False
-
-        for ext in candidate_extensions(selected_ext):
-            filename = f"{key}{ext}"
-            image_url = f"https://{image_server}.{domain}/{load_dir}/{load_id}/{filename}"
-            out_path = image_dir / filename
-
-            try:
-                out_path.write_bytes(download_binary(image_url, url))
-                print(f"[{idx}/{total}] downloaded {filename}")
-                downloaded = True
-                break
-            except urllib.error.HTTPError as exc:
-                if exc.code != 404:
-                    print(f"[{idx}/{total}] failed {filename}: {exc}", file=sys.stderr)
-                    break
-            except urllib.error.URLError as exc:
-                print(f"[{idx}/{total}] failed {filename}: {exc}", file=sys.stderr)
-                break
-
-        if not downloaded:
-            failure_count += 1
-            print(f"[{idx}/{total}] failed {key} (all extension fallbacks returned 404)", file=sys.stderr)
-
+        filename = f"{key}{extension_from_key(kind)}"
+        image_url = f"https://{image_server}.{domain}/{load_dir}/{load_id}/{filename}"
+        out_path = image_dir / filename
+        try:
+            req = urllib.request.Request(image_url, headers={"User-Agent": USER_AGENT, "Referer": url})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                out_path.write_bytes(resp.read())
+            print(f"[{idx}/{total}] downloaded {filename}")
+        except urllib.error.URLError as exc:
+            print(f"[{idx}/{total}] failed {filename}: {exc}", file=sys.stderr)
         if args.delay > 0:
             time.sleep(args.delay)
 
     if args.zip_after_download:
         archive_path = shutil.make_archive(str(gallery_dir), "zip", root_dir=gallery_dir)
-        return True, f"Downloaded + archived: {archive_path} (failed files: {failure_count})"
+        return True, f"Downloaded + archived: {archive_path}"
 
-    return True, f"Downloaded: {gallery_dir} (failed files: {failure_count})"
+    return True, f"Downloaded: {gallery_dir}"
 
 
 def main() -> int:
