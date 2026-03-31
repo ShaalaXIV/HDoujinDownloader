@@ -23,3 +23,45 @@
 To get started, download the [latest release](https://doujindownloader.com/hdoujin/download.php?host=github) and follow [these easy steps](https://github.com/HDoujinDownloader/HDoujin-Downloader/wiki/Getting-Started).
 
 If you need any help, don't hesitate to [reach out](https://doujindownloader.com/contact/)!
+
+## Standalone IMHentai downloader script
+
+If you want to directly use the IMHentai scraping logic without launching the HDoujin Downloader app, use:
+
+```bash
+python3 scripts/imhentai_downloader.py "https://imhentai.xxx/gallery/<id>/"
+```
+
+This writes a gallery folder under `downloads/` with:
+
+* `metadata.json` (title, tags, language, page count, upload date, summary, etc.)
+* `images/` with all downloaded gallery pages
+
+Useful options:
+
+```bash
+python3 scripts/imhentai_downloader.py "<gallery-url>" --metadata-only
+python3 scripts/imhentai_downloader.py "<gallery-url>" -o /path/to/output --delay 0.5
+```
+
+Tag/listing crawl + filtering + archiving example:
+
+```bash
+python3 scripts/imhentai_downloader.py "https://imhentai.xxx/tag/agata/" \
+  --required-language english \
+  --required-tag agata \
+  --max-pages 25 \
+  --zip-after-download
+```
+
+This crawls gallery URLs from the listing pages, downloads only galleries that match all required filters, and creates a `.zip` archive for each downloaded gallery folder.
+
+If you only want to collect matching gallery URLs into a text file:
+
+```bash
+python3 scripts/imhentai_downloader.py "https://imhentai.xxx/tag/agata/" \
+  --required-language english \
+  --required-tag agata \
+  --max-pages 25 \
+  --collect-urls-file agata_english_urls.txt
+```
