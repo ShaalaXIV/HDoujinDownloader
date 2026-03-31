@@ -9,6 +9,30 @@ function Register()
 
 end
 
+local function GetGalleryTags(groupName)
+
+    local tags = dom.SelectValues('//span[contains(text(),"' .. groupName .. '")]/following-sibling::a/text()[1]')
+
+    if(isempty(tags)) then
+        tags = dom.SelectValues('//span[contains(text(),"' .. groupName .. '")]/following-sibling::div//a')
+    end
+
+    return tags
+
+end
+
+local function ParsePageCount(pageCount)
+
+    local numericPageCount = tostring(pageCount):regex('(\\d+)', 1)
+
+    if(not isempty(numericPageCount)) then
+        return numericPageCount
+    end
+
+    return pageCount
+
+end
+
 local function GetFileExtensionFromKey(key)
 
     if(key == 'j') then
@@ -74,7 +98,7 @@ function GetInfo()
 
         local backToGalleryUrl = dom.SelectValue('//a[contains(@class,"return_btn")]/@href')
 
-        if(not isempty(url)) then
+        if(not isempty(backToGalleryUrl)) then
 
             url = backToGalleryUrl
             dom = Dom.New(http.Get(backToGalleryUrl))
@@ -87,29 +111,20 @@ function GetInfo()
         
         info.Title = dom.SelectValue('//h1')
         info.OriginalTitle = dom.SelectValue('//p[contains(@class,"subtitle")]')
-        info.Parody = dom.SelectValues('//span[contains(text(),"Parodies")]/following-sibling::a/text()[1]')
-        info.Characters = dom.SelectValues('//span[contains(text(),"Characters")]/following-sibling::a/text()[1]')
-        info.Tags = dom.SelectValues('//span[contains(text(),"Tags")]/following-sibling::a/text()[1]')
-        info.Artist = dom.SelectValues('//span[contains(text(),"Artists")]/following-sibling::a/text()[1]')
-        info.Circle = dom.SelectValues('//span[contains(text(),"Groups")]/following-sibling::a/text()[1]')
-        info.Language = dom.SelectValues('//span[contains(text(),"Languages")]/following-sibling::a/text()[1]')
-        info.Type = dom.SelectValues('//span[contains(text(),"Category")]/following-sibling::a/text()[1]')
+        info.Parody = GetGalleryTags('Parodies')
+        info.Characters = GetGalleryTags('Characters')
+        info.Tags = GetGalleryTags('Tags')
+        info.Artist = GetGalleryTags('Artists')
+        info.Circle = GetGalleryTags('Groups')
+        info.Language = GetGalleryTags('Languages')
+        info.Type = GetGalleryTags('Category')
+        info.PageCount = ParsePageCount(dom.SelectValue('//span[contains(text(),"Pages")]/following-sibling::a[1]'))
+        info.Summary = dom.SelectValue('//meta[@name="description"]/@content')
+        info.DateReleased = dom.SelectValue('//span[contains(text(),"Uploaded")]/following-sibling::span[1]')
         info.Url = url
 
-        if(isempty(info.Tags)) then
-            info.Tags = dom.SelectValues('//span[contains(text(),"Tags")]/following-sibling::div//a')
-        end
-
-        if(isempty(info.Artist)) then
-            info.Artist = dom.SelectValues('//span[contains(text(),"Artists")]/following-sibling::div//a')
-        end
-
-        if(isempty(info.Language)) then
-            info.Language = dom.SelectValues('//span[contains(text(),"Languages")]/following-sibling::div//a')
-        end
-
-        if(isempty(info.Type)) then
-            info.Type = dom.SelectValues('//span[contains(text(),"Category")]/following-sibling::div//a')
+        if(isempty(info.Summary)) then
+            info.Summary = dom.SelectValue('//meta[@property="og:description"]/@content')
         end
 
     else
